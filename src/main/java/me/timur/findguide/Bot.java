@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -71,9 +72,41 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
+    private void handleIncomingMessage(Message message) {
+        if (message.hasText() && message.getText().startsWith("/findguide")) {
+            // Ask for the language
+            sendMessage(message.getChatId(), "Please select a language:", createLanguageOptionsKeyboard());
+            // Store the chat ID to keep track of the user's progress
+            userProgressMap.put(message.getChatId(), new UserProgress());
+        } else {
+            // Check if the user is currently selecting a language, region, or date
+            UserProgress progress = userProgressMap.get(message.getChatId());
+            if (progress != null) {
+                if (progress.isSelectingLanguage()) {
+                    // Store the selected language and ask for the region
+                    progress.setLanguage(message.getText());
+                    sendMessage(message.getChatId(), "Please select a region:",
+                            createRegionOptionsKeyboard());
+                    progress.setSelectingLanguage(false);
+                    progress.setSelectingRegion(true);
+                } else if (progress.isSelectingEndDate()) {
+                    // Store the selected end date and search for a guide
+                    String endDate = message.getText();
+                    progress.setEndDate(endDate);
+                    List<Guide> result = searchGuides(progress.getLanguage(), progress.getRegion(),
+                            progress.getStartDate(), progress.getEndDate());
+                    sendMessage(message.getChatId(), result.stream().map(Guide::getName).collect(Collectors.joining(",")));
+                    // Clear the user's progress
+                    userProgressMap.remove(message.getChatId());
+                }
+            }
+        }
+    }
+
     private void handleCallbackQuery(CallbackQuery query) {
         String data = query.getData();
         long chatId = query.getMessage().getChatId();
+        int prevMessageId = query.getMessage().getMessageId();
         UserProgress progress = userProgressMap.get(chatId);
         if (data.equals("Cancel")) {
             // Cancel the current operation and clear the user's progress
@@ -82,44 +115,44 @@ public class Bot extends TelegramLongPollingBot {
         } else if (progress.isSelectingLanguage()) {
             // Store the selected language and ask for the region
             progress.setLanguage(data);
-            sendMessage(chatId, "Please select a region:", createRegionOptionsKeyboard());
+            sendMessage(chatId, prevMessageId,"Please select a region:", createRegionOptionsKeyboard());
             progress.setSelectingLanguage(false);
             progress.setSelectingRegion(true);
         } else if (progress.isSelectingRegion()) {
             // Store the selected region and ask for the start year
             progress.setRegion(data);
-            sendYear(chatId, "Please select a start year:");
+            sendYear(chatId, "Please select a start year:", prevMessageId);
             progress.setSelectingRegion(false);
             progress.setSelectingStartYear(true);
         }  else if (progress.isSelectingStartYear()) {
             // Store the selected year and ask for the start month
             progress.setRegion(data);
-            sendMonth(chatId, "Please select a start month:");
+            sendMonth(chatId, "Please select a start month:", prevMessageId);
             progress.setSelectingStartYear(false);
             progress.setSelectingStartMonth(true);
         }  else if (progress.isSelectingStartMonth()) {
             // Store the selected moth and ask for the start date
             progress.setRegion(data);
-            sendDay(chatId, "Please select a start date:");
+            sendDay(chatId, "Please select a start date:", prevMessageId);
             progress.setSelectingStartMonth(false);
             progress.setSelectingStartDate(true);
         }  else if (progress.isSelectingStartDate()) {
             // Store the selected date and ask for the end year
             progress.setRegion(data);
-            sendYear(chatId, "Please select a end year:");
+            sendYear(chatId, "Please select a end year:", prevMessageId);
             progress.setSelectingStartDate(false);
             progress.setSelectingEndYear(true);
         }  else if (progress.isSelectingEndYear()) {
             // Store the selected end year and ask for the end month
             progress.setRegion(data);
-            sendMonth(chatId, "Please select a end month:");
+            sendMonth(chatId, "Please select a end month:", prevMessageId);
             progress.setSelectingEndYear(false);
             progress.setSelectingEndMonth(true);
         } else if (progress.isSelectingEndMonth()) {
             // Store the selected end month and ask for the end date
             String startDate = data;
             progress.setStartDate(startDate);
-            sendDay(chatId, "Please select an end date:");
+            sendDay(chatId, "Please select an end date:", prevMessageId);
             progress.setSelectingEndMonth(false);
             progress.setSelectingEndDate(true);
         } else if (progress.isSelectingEndDate()) {
@@ -175,73 +208,18 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-    private void handleIncomingMessage(Message message) {
-        if (message.hasText() && message.getText().startsWith("/findguide")) {
-            // Ask for the language
-            sendMessage(message.getChatId(), "Please select a language:", createLanguageOptionsKeyboard());
-            // Store the chat ID to keep track of the user's progress
-            userProgressMap.put(message.getChatId(), new UserProgress());
-        } else {
-            // Check if the user is currently selecting a language, region, or date
-            UserProgress progress = userProgressMap.get(message.getChatId());
-            if (progress != null) {
-                if (progress.isSelectingLanguage()) {
-                    // Store the selected language and ask for the region
-                    progress.setLanguage(message.getText());
-                    sendMessage(message.getChatId(), "Please select a region:",
-                            createRegionOptionsKeyboard());
-                    progress.setSelectingLanguage(false);
-                    progress.setSelectingRegion(true);
-//                } else if (progress.isSelectingRegion()) {
-//                    // Store the selected region and ask for the start year
-//                    progress.setRegion(message.getText());
-//                    sendCalendar(message.getChatId(), "Please select a start year:");
-//                    progress.setSelectingRegion(false);
-//                    progress.setSelectingStartYear(true);
-//                }  else if (progress.isSelectingStartYear()) {
-//                    // Store the selected year and ask for the start month
-//                    progress.setRegion(message.getText());
-//                    sendCalendar(message.getChatId(), "Please select a start month:");
-//                    progress.setSelectingStartYear(false);
-//                    progress.setSelectingStartMonth(true);
-//                }  else if (progress.isSelectingStartMonth()) {
-//                    // Store the selected moth and ask for the start date
-//                    progress.setRegion(message.getText());
-//                    sendCalendar(message.getChatId(), "Please select a start date:");
-//                    progress.setSelectingStartMonth(false);
-//                    progress.setSelectingStartDate(true);
-//                }  else if (progress.isSelectingStartDate()) {
-//                    // Store the selected date and ask for the end year
-//                    progress.setRegion(message.getText());
-//                    sendCalendar(message.getChatId(), "Please select a end year:");
-//                    progress.setSelectingStartDate(false);
-//                    progress.setSelectingEndYear(true);
-//                }  else if (progress.isSelectingEndYear()) {
-//                    // Store the selected end year and ask for the end month
-//                    progress.setRegion(message.getText());
-//                    sendCalendar(message.getChatId(), "Please select a end month:");
-//                    progress.setSelectingEndYear(false);
-//                    progress.setSelectingEndMonth(true);
-//                } else if (progress.isSelectingEndMonth()) {
-//                    // Store the selected end month and ask for the end date
-//                    String startDate = message.getText();
-//                    progress.setStartDate(startDate);
-//                    sendCalendar(message.getChatId(), "Please select an end date:");
-//                    progress.setSelectingEndMonth(false);
-//                    progress.setSelectingEndDate(true);
-                } else if (progress.isSelectingEndDate()) {
-                    // Store the selected end date and search for a guide
-                    String endDate = message.getText();
-                    progress.setEndDate(endDate);
-                    List<Guide> result = searchGuides(progress.getLanguage(), progress.getRegion(),
-                            progress.getStartDate(), progress.getEndDate());
-                    sendMessage(message.getChatId(), result.stream().map(Guide::getName).collect(Collectors.joining(",")));
-                    // Clear the user's progress
-                    userProgressMap.remove(message.getChatId());
-                }
-            }
+    private void sendMessage(long chatId, int prevMessageId, String message, InlineKeyboardMarkup markup) {
+        DeleteMessage deleteMessage = new DeleteMessage(String.valueOf(chatId), prevMessageId);
+        SendMessage sendMessage = new SendMessage(String.valueOf(chatId), message);
+        sendMessage.setReplyMarkup(markup);
+        try {
+            execute(deleteMessage);
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
         }
     }
+
 
     private InlineKeyboardMarkup createLanguageOptionsKeyboard() {
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
@@ -275,60 +253,27 @@ public class Bot extends TelegramLongPollingBot {
         return keyboard;
     }
 
-    private void sendYear(long chatId, String messageText) {
+    private void sendYear(long chatId, String messageText, int prevMessageId) {
         // Create a reply keyboard markup with a calendar
         InlineKeyboardMarkup markup = createInlineKeyboard(List.of("2023","2024","2025"), 3);
-
-        // Create the message with the calendar
-        SendMessage message = new SendMessage();
-        message.setChatId(chatId);
-        message.setText(messageText);
-        message.setReplyMarkup(markup);
-        // Send the message with the calendar
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+        sendMessage(chatId, prevMessageId, messageText, markup);
     }
 
-    private void sendMonth(long chatId, String messageText) {
+    private void sendMonth(long chatId, String messageText, int prevMessageId) {
         // Create a reply keyboard markup with a calendar
         List<String> months = List.of("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec");
         InlineKeyboardMarkup markup = createInlineKeyboard(months, 3);
-
-        // Create the message with the calendar
-        SendMessage message = new SendMessage();
-        message.setChatId(chatId);
-        message.setText(messageText);
-        message.setReplyMarkup(markup);
-        // Send the message with the calendar
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+        sendMessage(chatId, prevMessageId, messageText, markup);
     }
 
-    private void sendDay(long chatId, String messageText) {
+    private void sendDay(long chatId, String messageText, int prevMessageId) {
         // Create a reply keyboard markup with a calendar
         List<String> days = new ArrayList<>();
         for (int i=1; i <=31; i++){
             days.add(String.valueOf(i));
         }
         InlineKeyboardMarkup markup = createInlineKeyboard(days, 7);
-
-        // Create the message with the calendar
-        SendMessage message = new SendMessage();
-        message.setChatId(chatId);
-        message.setText(messageText);
-        message.setReplyMarkup(markup);
-        // Send the message with the calendar
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+        sendMessage(chatId, prevMessageId, messageText, markup);
     }
 
     private InlineKeyboardMarkup createInlineKeyboard(List<String> values, int rowLength) {
