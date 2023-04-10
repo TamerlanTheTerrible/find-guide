@@ -1,6 +1,7 @@
 package me.timur.findguide.dto;
 
 import lombok.Data;
+import me.timur.findguide.constant.Language;
 
 /**
  * Created by Temurbek Ismoilov on 28/03/23.
@@ -16,14 +17,14 @@ public class UserProgress {
     private boolean selectingEndYear;
     private boolean selectingEndMonth;
     private boolean selectingEndDate;
-    private String language;
+    private Language language;
     private String region;
-    private String startYear;
+    private Integer startYear;
     private String startMonth;
-    private String startDate;
-    private String endYear;
+    private Integer startDate;
+    private Integer endYear;
     private String endMonth;
-    private String endDate;
+    private Integer endDate;
 
     public UserProgress() {
         selectingLanguage = true;
