@@ -83,23 +83,23 @@
 //            // Check if the user is currently selecting a language, region, or date
 //            UserProgress progress = userProgressMap.get(message.getChatId());
 //            if (progress != null) {
-//                if (progress.isSelectingLanguage()) {
-//                    // Store the selected language and ask for the region
-//                    progress.setLanguage(Language.valueOf(message.getText()));
-//                    sendMessage(message.getChatId(), "Please select a region:",
-//                            createRegionOptionsKeyboard());
-//                    progress.setSelectingLanguage(false);
-//                    progress.setSelectingRegion(true);
-//                } else if (progress.isSelectingEndDate()) {
-//                    // Store the selected end date and search for a guide
-//                    String endDate = message.getText();
-//                    progress.setEndDate(Integer.valueOf(endDate));
-//                    List<Guide> result = searchGuides(progress.getLanguage().name(), progress.getRegion(),
-//                            progress.getStartDate(), progress.getEndDate());
-//                    sendMessage(message.getChatId(), result.stream().map(Guide::getName).collect(Collectors.joining(",")));
-//                    // Clear the user's progress
-//                    userProgressMap.remove(message.getChatId());
-//                }
+////                if (progress.isSelectingLanguage()) {
+////                    // Store the selected language and ask for the region
+////                    progress.setLanguage(Language.valueOf(message.getText()));
+////                    sendMessage(message.getChatId(), "Please select a region:",
+////                            createRegionOptionsKeyboard());
+////                    progress.setSelectingLanguage(false);
+////                    progress.setSelectingRegion(true);
+////                } else if (progress.isSelectingEndDate()) {
+////                    // Store the selected end date and search for a guide
+////                    String endDate = message.getText();
+////                    progress.setEndDate(Integer.valueOf(endDate));
+////                    List<Guide> result = searchGuides(progress.getLanguage().name(), progress.getRegion(),
+////                            progress.getStartDate().toString(), progress.getEndDate());
+////                    sendMessage(message.getChatId(), result.stream().map(Guide::getName).collect(Collectors.joining(",")));
+////                    // Clear the user's progress
+////                    userProgressMap.remove(message.getChatId());
+////                }
 //            }
 //        }
 //    }
@@ -127,7 +127,7 @@
 //            progress.setSelectingStartYear(true);
 //        }  else if (progress.isSelectingStartYear()) {
 //            // Store the selected year and ask for the start month
-//            progress.setRegion(data);
+//            progress.setStartYear(Integer.valueOf(data));
 //            sendMonth(chatId, "Please select a start month:", prevMessageId);
 //            progress.setSelectingStartYear(false);
 //            progress.setSelectingStartMonth(true);
