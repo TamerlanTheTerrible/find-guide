@@ -20,10 +20,10 @@ public class UserProgress {
     private Language language;
     private String region;
     private Integer startYear;
-    private String startMonth;
+    private Integer startMonth;
     private Integer startDate;
     private Integer endYear;
-    private String endMonth;
+    private Integer endMonth;
     private Integer endDate;
 
     public UserProgress() {

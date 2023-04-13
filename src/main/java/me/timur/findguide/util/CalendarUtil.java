@@ -75,6 +75,10 @@ public class CalendarUtil {
         return days;
     }
 
+    public static List<String> monthNames() {
+        return new ArrayList<>(monthMap.keySet());
+    }
+
     public static Integer monthNumber(String monthName) {
         final Integer monthNumber = monthMap.get(monthName);
         if (monthNumber == null) {
