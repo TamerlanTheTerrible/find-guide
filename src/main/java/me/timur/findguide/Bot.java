@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.timur.findguide.constant.Language;
 import me.timur.findguide.dto.Guide;
-import me.timur.findguide.dto.UserProgress;
+import me.timur.findguide.dto.GuideParams;
 import me.timur.findguide.util.CalendarUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -22,7 +22,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Created by Temurbek Ismoilov on 22/03/23.
@@ -48,7 +47,7 @@ public class Bot extends TelegramLongPollingBot {
         return this.BOT_NAME;
     }
 
-    public static final Map<Long, UserProgress> userProgressMap = new ConcurrentHashMap<>();
+    public static final Map<Long, GuideParams> userProgressMap = new ConcurrentHashMap<>();
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -63,45 +62,15 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-//    @Override
-//    public void onUpdatesReceived(List<Update> updates) {
-//        for (Update update : updates) {
-//            if (update.hasMessage()) {
-//                handleIncomingMessage(update.getMessage());
-//            } else if (update.hasCallbackQuery()) {
-//                handleCallbackQuery(update.getCallbackQuery());
-//            }
-//        }
-//    }
-
     private void handleIncomingMessage(Message message) {
         if (message.hasText() && message.getText().startsWith("/findguide")) {
             // Ask for the language
             sendMessage(message.getChatId(), "Please select a language:", createLanguageOptionsKeyboard());
             // Store the chat ID to keep track of the user's progress
-            userProgressMap.put(message.getChatId(), new UserProgress());
+            userProgressMap.put(message.getChatId(), new GuideParams());
         } else {
             // Check if the user is currently selecting a language, region, or date
-            UserProgress progress = userProgressMap.get(message.getChatId());
-            if (progress != null) {
-//                if (progress.isSelectingLanguage()) {
-//                    // Store the selected language and ask for the region
-//                    progress.setLanguage(Language.valueOf(message.getText()));
-//                    sendMessage(message.getChatId(), "Please select a region:",
-//                            createRegionOptionsKeyboard());
-//                    progress.setSelectingLanguage(false);
-//                    progress.setSelectingRegion(true);
-//                } else if (progress.isSelectingEndDate()) {
-//                    // Store the selected end date and search for a guide
-//                    String endDate = message.getText();
-//                    progress.setEndDate(Integer.valueOf(endDate));
-//                    List<Guide> result = searchGuides(progress.getLanguage().name(), progress.getRegion(),
-//                            progress.getStartDate().toString(), progress.getEndDate());
-//                    sendMessage(message.getChatId(), result.stream().map(Guide::getName).collect(Collectors.joining(",")));
-//                    // Clear the user's progress
-//                    userProgressMap.remove(message.getChatId());
-//                }
-            }
+            GuideParams progress = userProgressMap.get(message.getChatId());
         }
     }
 
@@ -109,7 +78,7 @@ public class Bot extends TelegramLongPollingBot {
         String data = query.getData();
         long chatId = query.getMessage().getChatId();
         int prevMessageId = query.getMessage().getMessageId();
-        UserProgress progress = userProgressMap.get(chatId);
+        GuideParams progress = userProgressMap.get(chatId);
         if (data.equals("Cancel")) {
             // Cancel the current operation and clear the user's progress
             sendMessage(chatId, "Operation cancelled.");
