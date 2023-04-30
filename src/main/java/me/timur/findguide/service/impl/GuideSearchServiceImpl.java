@@ -1,7 +1,8 @@
 package me.timur.findguide.service.impl;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import me.timur.findguide.constant.CallbackPrefix;
+import me.timur.findguide.constant.Command;
 import me.timur.findguide.constant.Language;
 import me.timur.findguide.dto.Guide;
 import me.timur.findguide.dto.GuideParams;
@@ -14,14 +15,12 @@ import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -29,15 +28,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
 public class GuideSearchServiceImpl implements CallbackHandler {
 
-    private static final Map<Long, GuideParams> userProgressMap = new ConcurrentHashMap<>();
-    private final static String callbackPrefix = CallbackPrefix.GUIDE_PARAMS.name();
+    private final ConcurrentHashMap<Long, GuideParams> userProgressMap;
+    private final static String callbackPrefix = Command.GUIDE_PARAMS.command;
 
     @Override
-    public CallbackPrefix getType() {
-        return CallbackPrefix.GUIDE_PARAMS;
+    public Command getType() {
+        return Command.GUIDE_PARAMS;
     }
 
     @Override
@@ -50,7 +50,10 @@ public class GuideSearchServiceImpl implements CallbackHandler {
         GuideParams progress = userProgressMap.get(chatId);
         List<BotApiMethod<? extends Serializable>> methodList = new ArrayList<>();
 
-        if (progress.isSelectingLanguage()) {
+        if (progress == null) {
+            userProgressMap.put(chatId, new GuideParams());
+            methodList = sendMessage(chatId,"Please select a language:", createLanguageOptionsKeyboard());
+        } else if (progress.isSelectingLanguage()) {
             // Store the selected language and ask for the region
             progress.setLanguage(Language.get(data));
             progress.setSelectingLanguage(false);
@@ -128,28 +131,28 @@ public class GuideSearchServiceImpl implements CallbackHandler {
         return methodList;
     }
 
+    private InlineKeyboardMarkup createLanguageOptionsKeyboard() {
+        List<String> languages =
+                Arrays.stream(Language.values())
+                        .map(l -> l.text)
+                        .toList();
+        return KeyboardUtil.createInlineKeyboard(languages, callbackPrefix,4);
+    }
+
     private InlineKeyboardMarkup createRegionOptionsKeyboard() {
-        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
-        List<InlineKeyboardButton> buttons = new ArrayList<>();
-        final InlineKeyboardButton uzbekistan = new InlineKeyboardButton("Uzbekistan");
-        uzbekistan.setCallbackData("Uzbekistan");
-        buttons.add(uzbekistan);
-        final InlineKeyboardButton tashkent = new InlineKeyboardButton("Tashkent");
-        tashkent.setCallbackData("Tashkent");
-        buttons.add(tashkent);
-        keyboard.setKeyboard(Collections.singletonList(buttons));
-        return keyboard;
+        List<String> regions = List.of("Uzbekistan", "Tashkent", "Samarkand", "Bukhara", "Khiva", "Fergana Valley");
+        return KeyboardUtil.createInlineKeyboard(regions, callbackPrefix, 3);
     }
 
     private List<BotApiMethod<? extends Serializable>> sendYear(long chatId, String messageText, int prevMessageId) {
         // Create a reply keyboard markup with a calendar
-        InlineKeyboardMarkup markup = KeyboardUtil.createInlineKeyboard(List.of("2023","2024","2025"), 3);
+        InlineKeyboardMarkup markup = KeyboardUtil.createInlineKeyboard(List.of("2023","2024","2025"), callbackPrefix, 3);
         return sendMessage(chatId, prevMessageId, messageText, markup);
     }
 
     private List<BotApiMethod<? extends Serializable>> sendMonth(long chatId, String messageText, int prevMessageId) {
         // Create a reply keyboard markup with a calendar
-        InlineKeyboardMarkup markup = KeyboardUtil.createInlineKeyboard(CalendarUtil.monthNames(), 3);
+        InlineKeyboardMarkup markup = KeyboardUtil.createInlineKeyboard(CalendarUtil.monthNames(), callbackPrefix, 3);
         return sendMessage(chatId, prevMessageId, messageText, markup);
     }
 
@@ -159,7 +162,7 @@ public class GuideSearchServiceImpl implements CallbackHandler {
         for (int i=1; i <=31; i++){
             days.add(String.valueOf(i));
         }
-        InlineKeyboardMarkup markup = KeyboardUtil.createInlineKeyboard(days, 7);
+        InlineKeyboardMarkup markup = KeyboardUtil.createInlineKeyboard(days, callbackPrefix, 7);
         return sendMessage(chatId, prevMessageId, messageText, markup);
     }
 
@@ -170,13 +173,14 @@ public class GuideSearchServiceImpl implements CallbackHandler {
     private List<BotApiMethod<? extends Serializable>> sendMessage(long chatId, int prevMessageId, String message, InlineKeyboardMarkup markup) {
         DeleteMessage deleteMessage = new DeleteMessage(String.valueOf(chatId), prevMessageId);
         SendMessage sendMessage = new SendMessage(String.valueOf(chatId), message);
+        sendMessage.setReplyMarkup(markup);
         return List.of(deleteMessage, sendMessage);
     }
 
-    private SendMessage sendMessage(long chatId, String message, InlineKeyboardMarkup markup) {
+    private List<BotApiMethod<? extends Serializable>> sendMessage(long chatId, String message, InlineKeyboardMarkup markup) {
         SendMessage sendMessage = new SendMessage(String.valueOf(chatId), message);
         sendMessage.setReplyMarkup(markup);
-        return sendMessage;
+        return List.of(sendMessage);
     }
 
     private List<Guide> searchGuides(String language, String region, String startDate, String endDate) {

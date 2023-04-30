@@ -3,8 +3,9 @@ package me.timur.findguide.dto;
 import lombok.Getter;
 import lombok.NonNull;
 import me.timur.findguide.exception.FindGuideBotException;
-import me.timur.findguide.util.QueryDataUtil;
+import me.timur.findguide.util.UpdateUtil;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.Message;
 
 /**
  * Created by Temurbek Ismoilov on 14/04/23.
@@ -21,7 +22,16 @@ public class RequestDto {
             throw new FindGuideBotException("CallbackQuery cannot be null");
         }
         this.chatId = query.getMessage().getChatId();
-        this.data = QueryDataUtil.getData(query.getData());
+        this.data = UpdateUtil.getData(query.getData());
         this.prevMessageId = query.getMessage().getMessageId();
+    }
+
+    public RequestDto(@NonNull Message message) {
+        if (message == null) {
+            throw new FindGuideBotException("Message cannot be null");
+        }
+        this.chatId = message.getChatId();
+        this.data = message.getText();
+        this.prevMessageId = message.getMessageId();
     }
 }
