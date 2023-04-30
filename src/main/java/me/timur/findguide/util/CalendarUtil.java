@@ -5,6 +5,7 @@ import org.springframework.lang.NonNull;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -22,6 +23,10 @@ public class CalendarUtil {
             monthMap.put(now.getMonth().name(), i);
             now = now.plusMonths(1);
         }
+    }
+
+    public static String formatDate(LocalDate localDate) {
+        return localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     }
 
     public static List<Integer> years(int numberOfYears) {
