@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>me.timur</groupId>
-    <artifactId>find-guide</artifactId>
+    <artifactId>find-guideDto</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>find-guide</name>
-    <description>find-guide</description>
+    <name>find-guideDto</name>
+    <description>find-guideDto</description>
     <properties>
         <java.version>17</java.version>
     </properties>

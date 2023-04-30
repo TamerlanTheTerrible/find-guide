@@ -8,7 +8,7 @@ import me.timur.findguide.constant.Language;
  */
 
 @Data
-public class GuideParams {
+public class UserProgress {
     private boolean selectingLanguage;
     private boolean selectingRegion;
     private boolean selectingStartYear;
@@ -26,7 +26,7 @@ public class GuideParams {
     private Integer endMonth;
     private Integer endDate;
 
-    public GuideParams() {
+    public UserProgress() {
         selectingLanguage = true;
     }
 

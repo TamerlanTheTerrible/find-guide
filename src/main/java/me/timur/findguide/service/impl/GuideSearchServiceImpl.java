@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.timur.findguide.constant.Command;
 import me.timur.findguide.constant.Language;
-import me.timur.findguide.dto.Guide;
-import me.timur.findguide.dto.GuideParams;
+import me.timur.findguide.dto.GuideDto;
+import me.timur.findguide.dto.UserProgress;
 import me.timur.findguide.dto.RequestDto;
 import me.timur.findguide.service.CallbackHandler;
 import me.timur.findguide.util.CalendarUtil;
@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class GuideSearchServiceImpl implements CallbackHandler {
 
-    private final ConcurrentHashMap<Long, GuideParams> userProgressMap;
+    private final ConcurrentHashMap<Long, UserProgress> userProgressMap;
     private final static String callbackPrefix = Command.GUIDE_PARAMS.command;
 
     @Override
@@ -42,92 +42,107 @@ public class GuideSearchServiceImpl implements CallbackHandler {
 
     @Override
     public List<BotApiMethod<? extends Serializable>> handle(RequestDto requestDto) {
+        log.info("Handling request: {}", requestDto);
         // get request data
         final long chatId = requestDto.getChatId();
         final String data = requestDto.getData();
         final int prevMessageId = requestDto.getPrevMessageId();
 
-        GuideParams progress = userProgressMap.get(chatId);
+        UserProgress progress = userProgressMap.get(chatId);
         List<BotApiMethod<? extends Serializable>> methodList = new ArrayList<>();
 
         if (progress == null) {
-            userProgressMap.put(chatId, new GuideParams());
+            log.info("Creating new progress for chatId: {}", chatId);
+            userProgressMap.put(chatId, new UserProgress());
             methodList = sendMessage(chatId,"Please select a language:", createLanguageOptionsKeyboard());
         } else if (progress.isSelectingLanguage()) {
+            log.info("Selecting language for chatId: {}", chatId);
             // Store the selected language and ask for the region
             progress.setLanguage(Language.get(data));
             progress.setSelectingLanguage(false);
             progress.setSelectingRegion(true);
             methodList = sendMessage(chatId, prevMessageId,"Please select a region:", createRegionOptionsKeyboard());
         } else if (progress.isSelectingRegion()) {
+            log.info("Selecting region for chatId: {}", chatId);
             // Store the selected region and ask for the start year
             progress.setRegion(data);
             progress.setSelectingRegion(false);
             progress.setSelectingStartYear(true);
             methodList = sendYear(chatId, "Please select a start year:", prevMessageId);
         }  else if (progress.isSelectingStartYear()) {
+            log.info("Selecting start year for chatId: {}", chatId);
             // Store the selected year and ask for the start month
             progress.setStartYear(Integer.valueOf(data));
             progress.setSelectingStartYear(false);
             progress.setSelectingStartMonth(true);
             methodList = sendMonth(chatId, "Please select a start month:", prevMessageId);
         }  else if (progress.isSelectingStartMonth()) {
+            log.info("Selecting start month for chatId: {}", chatId);
             // Store the selected moth and ask for the start date
             progress.setStartMonth(CalendarUtil.monthNumber(data));
             progress.setSelectingStartMonth(false);
             progress.setSelectingStartDate(true);
             methodList = sendDay(chatId, "Please select a start date:", prevMessageId);
         }  else if (progress.isSelectingStartDate()) {
+            log.info("Selecting start date for chatId: {}", chatId);
             // Store the selected date and ask for the end year
             progress.setStartDate(Integer.valueOf(data));
             progress.setSelectingStartDate(false);
             progress.setSelectingEndYear(true);
             methodList = sendYear(chatId, "Please select a end year:", prevMessageId);
         }  else if (progress.isSelectingEndYear()) {
+            log.info("Selecting end year for chatId: {}", chatId);
             // Store the selected end year and ask for the end month
             progress.setEndYear(Integer.valueOf(data));
             progress.setSelectingEndYear(false);
             progress.setSelectingEndMonth(true);
             methodList = sendMonth(chatId, "Please select a end month:", prevMessageId);
         } else if (progress.isSelectingEndMonth()) {
+            log.info("Selecting end month for chatId: {}", chatId);
             // Store the selected end month and ask for the end date
             progress.setEndMonth(CalendarUtil.monthNumber(data));
             progress.setSelectingEndMonth(false);
             progress.setSelectingEndDate(true);
             methodList = sendDay(chatId, "Please select an end date:", prevMessageId);
         } else if (progress.isSelectingEndDate()) {
+            log.info("Selecting end date for chatId: {}", chatId);
             // Store the selected end date and search
             progress.setEndDate(Integer.valueOf(data));
             // Search for a guide based on the user's input
-            String language = progress.getLanguage().name();
-            String region = progress.getRegion();
-            String startDateFormatted = CalendarUtil.formatDate(LocalDate.of(progress.getStartYear(), progress.getStartMonth(), progress.getStartDate()));
-            String endDateFormatted = CalendarUtil.formatDate(LocalDate.of(progress.getEndYear(), progress.getEndMonth(), progress.getEndDate()));
-
-            List<Guide> guides = searchGuides(language, region, startDateFormatted, endDateFormatted);
-            if (guides.isEmpty()) {
-                methodList = sendMessage(
-                        chatId,
-                        "No guides available for the selected criteria. "
-                                + "Please try again with different criteria.");
-                userProgressMap.remove(chatId);
-            } else {
-                // Display the search results to the user
-                StringBuilder messageText = new StringBuilder();
-                messageText.append("Here are the available guides:\n");
-                for (Guide guide : guides) {
-                    messageText
-                            .append("\n- ")
-                            .append(guide.getName())
-                            .append(" (")
-                            .append(guide.getLanguage())
-                            .append(")");
-                }
-                methodList = sendMessage(chatId, messageText.toString());
-                userProgressMap.remove(chatId);
-            }
+            methodList = searchGuide(chatId, progress);
         }
 
+        return methodList;
+    }
+
+    private List<BotApiMethod<? extends Serializable>> searchGuide(long chatId, UserProgress progress) {
+        List<BotApiMethod<? extends Serializable>> methodList;
+        String language = progress.getLanguage().name();
+        String region = progress.getRegion();
+        String startDateFormatted = CalendarUtil.formatDate(LocalDate.of(progress.getStartYear(), progress.getStartMonth(), progress.getStartDate()));
+        String endDateFormatted = CalendarUtil.formatDate(LocalDate.of(progress.getEndYear(), progress.getEndMonth(), progress.getEndDate()));
+
+        List<GuideDto> guideDtos = searchGuides(language, region, startDateFormatted, endDateFormatted);
+        if (guideDtos.isEmpty()) {
+            methodList = sendMessage(
+                    chatId,
+                    "No guides available for the selected criteria. "
+                            + "Please try again with different criteria.");
+        } else {
+            // Display the search results to the user
+            StringBuilder messageText = new StringBuilder();
+            messageText.append("Here are the available guides:\n");
+            for (GuideDto guideDto : guideDtos) {
+                messageText
+                        .append("\n- ")
+                        .append(guideDto.getName())
+                        .append(" (")
+                        .append(guideDto.getLanguage())
+                        .append(")");
+            }
+            methodList = sendMessage(chatId, messageText.toString());
+        }
+        userProgressMap.remove(chatId);
         return methodList;
     }
 
@@ -183,37 +198,9 @@ public class GuideSearchServiceImpl implements CallbackHandler {
         return List.of(sendMessage);
     }
 
-    private List<Guide> searchGuides(String language, String region, String startDate, String endDate) {
+    private List<GuideDto> searchGuides(String language, String region, String startDate, String endDate) {
         log.info("Searching for a guide => lang: {}, region: {}, startDate: {}, endDate {}", language, region, startDate, endDate);
-        // In a real application, this method would perform a search in a database or external API
-        // Here, we just return a dummy list of guides
-        List<Guide> guides = new ArrayList<>();
-        if (language.equals("English") && region.equals("Tashkent") && startDate.equals("2023-03-27") && endDate.equals("2023-04-01")) {
-            guides.add(new Guide("John", "English"));
-            guides.add(new Guide("Sarah", "English"));
-        } else if (language.equals("English") && region.equals("Samarkand-Bukhara") && startDate.equals("2023-03-30") && endDate.equals("2023-04-05")) {
-            guides.add(new Guide("David", "English"));
-            guides.add(new Guide("Emma", "English"));
-        } else if (language.equals("Russian") && region.equals("Tashkent") && startDate.equals("2023-03-29") && endDate.equals("2023-04-03")) {
-            guides.add(new Guide("Ivan", "Russian"));
-            guides.add(new Guide("Olga", "Russian"));
-        } else if (language.equals("Russian") && region.equals("Samarkand-Bukhara") && startDate.equals("2023-03-31") && endDate.equals("2023-04-06")) {
-            guides.add(new Guide("Dmitry", "Russian"));
-            guides.add(new Guide("Svetlana", "Russian"));
-        } else if (language.equals("German") && region.equals("Tashkent") && startDate.equals("2023-03-28") && endDate.equals("2023-04-02")) {
-            guides.add(new Guide("Hans", "German"));
-            guides.add(new Guide("Greta", "German"));
-        } else if (language.equals("German") && region.equals("Samarkand-Bukhara") && startDate.equals("2023-04-01") && endDate.equals("2023-04-07")) {
-            guides.add(new Guide("Klaus", "German"));
-            guides.add(new Guide("Ingrid", "German"));
-        } else if (language.equals("Italian") && region.equals("Tashkent") && startDate.equals("2023-03-27") && endDate.equals("2023-04-01")) {
-            guides.add(new Guide("Mario", "Italian"));
-            guides.add(new Guide("Giulia", "Italian"));
-        } else if (language.equals("Italian") && region.equals("Samarkand-Bukhara") && startDate.equals("2023-03-31") && endDate.equals("2023-04-06")) {
-            guides.add(new Guide("Luigi", "Italian"));
-            guides.add(new Guide("Maria", "Italian"));
-        }
-        return guides;
+        return null;
     }
 
 }
