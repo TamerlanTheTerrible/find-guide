@@ -12,6 +12,6 @@ import java.util.List;
  * Created by Temurbek Ismoilov on 14/04/23.
  */
 
-public interface CallbackHandler extends Type<Command> {
+public interface UpdateHandlerService extends Type<Command> {
     List<BotApiMethod<? extends Serializable>> handle(RequestDto requestDto);
 }

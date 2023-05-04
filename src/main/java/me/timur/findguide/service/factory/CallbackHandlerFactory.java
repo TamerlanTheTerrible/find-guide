@@ -2,7 +2,7 @@ package me.timur.findguide.service.factory;
 
 import lombok.extern.slf4j.Slf4j;
 import me.timur.findguide.constant.Command;
-import me.timur.findguide.service.CallbackHandler;
+import me.timur.findguide.service.UpdateHandlerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -17,19 +17,19 @@ import java.util.List;
 @Component
 public class CallbackHandlerFactory {
 
-    private final EnumMap<Command, CallbackHandler> map;
+    private final EnumMap<Command, UpdateHandlerService> map;
 
     @Autowired
-    public CallbackHandlerFactory(List<CallbackHandler> protocolServices) {
+    public CallbackHandlerFactory(List<UpdateHandlerService> protocolServices) {
         this.map = new EnumMap<>(Command.class);
         protocolServices.forEach(service -> map.put(service.getType(), service));
     }
 
-    public CallbackHandler get(Command command) {
+    public UpdateHandlerService get(Command command) {
         return map.get(command);
     }
 
-    public CallbackHandler get(String commandStr) {
+    public UpdateHandlerService get(String commandStr) {
         return map.get(Command.get(commandStr));
     }
 }

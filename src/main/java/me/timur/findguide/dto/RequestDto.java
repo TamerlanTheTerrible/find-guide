@@ -13,9 +13,10 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 
 @Getter
 public class RequestDto {
-    private final long chatId;
-    private final String data;
-    private final int prevMessageId;
+    private long chatId;
+    private String data;
+    private int prevMessageId;
+    private String phone;
 
     public RequestDto(@NonNull CallbackQuery query) {
         if (query == null) {
@@ -24,6 +25,7 @@ public class RequestDto {
         this.chatId = query.getMessage().getChatId();
         this.data = UpdateUtil.getData(query.getData());
         this.prevMessageId = query.getMessage().getMessageId();
+        this.phone = query.getMessage().getContact().getPhoneNumber();
     }
 
     public RequestDto(@NonNull Message message) {
@@ -33,5 +35,6 @@ public class RequestDto {
         this.chatId = message.getChatId();
         this.data = message.getText();
         this.prevMessageId = message.getMessageId();
+        this.phone = message.getContact().getPhoneNumber();
     }
 }

@@ -5,7 +5,9 @@ package me.timur.findguide.constant;
  */
 
 public enum Command {
-    GUIDE_PARAMS("/findguide");
+    USER("/start"),
+    GUIDE_PARAMS("/findguide"),
+    ;
 
     public final String command;
 

@@ -7,13 +7,12 @@ import me.timur.findguide.constant.Language;
 import me.timur.findguide.dto.GuideDto;
 import me.timur.findguide.dto.UserProgress;
 import me.timur.findguide.dto.RequestDto;
-import me.timur.findguide.service.CallbackHandler;
+import me.timur.findguide.service.BotApiMethodService;
+import me.timur.findguide.service.UpdateHandlerService;
 import me.timur.findguide.util.CalendarUtil;
 import me.timur.findguide.util.KeyboardUtil;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 import java.io.Serializable;
@@ -30,8 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class GuideSearchServiceImpl implements CallbackHandler {
+public class GuideSearchServiceImpl implements UpdateHandlerService {
 
+    private final BotApiMethodService botApiMethodService;
     private final ConcurrentHashMap<Long, UserProgress> userProgressMap;
     private final static String callbackPrefix = Command.GUIDE_PARAMS.command;
 
@@ -54,14 +54,14 @@ public class GuideSearchServiceImpl implements CallbackHandler {
         if (progress == null) {
             log.info("Creating new progress for chatId: {}", chatId);
             userProgressMap.put(chatId, new UserProgress());
-            methodList = sendMessage(chatId,"Please select a language:", createLanguageOptionsKeyboard());
+            methodList = botApiMethodService.sendMessage(chatId,"Please select a language:", createLanguageOptionsKeyboard());
         } else if (progress.isSelectingLanguage()) {
             log.info("Selecting language for chatId: {}", chatId);
             // Store the selected language and ask for the region
             progress.setLanguage(Language.get(data));
             progress.setSelectingLanguage(false);
             progress.setSelectingRegion(true);
-            methodList = sendMessage(chatId, prevMessageId,"Please select a region:", createRegionOptionsKeyboard());
+            methodList = botApiMethodService.sendMessage(chatId, prevMessageId,"Please select a region:", createRegionOptionsKeyboard());
         } else if (progress.isSelectingRegion()) {
             log.info("Selecting region for chatId: {}", chatId);
             // Store the selected region and ask for the start year
@@ -124,7 +124,7 @@ public class GuideSearchServiceImpl implements CallbackHandler {
 
         List<GuideDto> guideDtos = searchGuides(language, region, startDateFormatted, endDateFormatted);
         if (guideDtos.isEmpty()) {
-            methodList = sendMessage(
+            methodList = botApiMethodService.sendMessage(
                     chatId,
                     "No guides available for the selected criteria. "
                             + "Please try again with different criteria.");
@@ -140,7 +140,7 @@ public class GuideSearchServiceImpl implements CallbackHandler {
                         .append(guideDto.getLanguage())
                         .append(")");
             }
-            methodList = sendMessage(chatId, messageText.toString());
+            methodList = botApiMethodService.sendMessage(chatId, messageText.toString());
         }
         userProgressMap.remove(chatId);
         return methodList;
@@ -162,13 +162,13 @@ public class GuideSearchServiceImpl implements CallbackHandler {
     private List<BotApiMethod<? extends Serializable>> sendYear(long chatId, String messageText, int prevMessageId) {
         // Create a reply keyboard markup with a calendar
         InlineKeyboardMarkup markup = KeyboardUtil.createInlineKeyboard(List.of("2023","2024","2025"), callbackPrefix, 3);
-        return sendMessage(chatId, prevMessageId, messageText, markup);
+        return botApiMethodService.sendMessage(chatId, prevMessageId, messageText, markup);
     }
 
     private List<BotApiMethod<? extends Serializable>> sendMonth(long chatId, String messageText, int prevMessageId) {
         // Create a reply keyboard markup with a calendar
         InlineKeyboardMarkup markup = KeyboardUtil.createInlineKeyboard(CalendarUtil.monthNames(), callbackPrefix, 3);
-        return sendMessage(chatId, prevMessageId, messageText, markup);
+        return botApiMethodService.sendMessage(chatId, prevMessageId, messageText, markup);
     }
 
     private List<BotApiMethod<? extends Serializable>> sendDay(long chatId, String messageText, int prevMessageId) {
@@ -178,24 +178,7 @@ public class GuideSearchServiceImpl implements CallbackHandler {
             days.add(String.valueOf(i));
         }
         InlineKeyboardMarkup markup = KeyboardUtil.createInlineKeyboard(days, callbackPrefix, 7);
-        return sendMessage(chatId, prevMessageId, messageText, markup);
-    }
-
-    private List<BotApiMethod<? extends Serializable>> sendMessage(long chatId, String message) {
-        return List.of(new SendMessage(String.valueOf(chatId), message));
-    }
-
-    private List<BotApiMethod<? extends Serializable>> sendMessage(long chatId, int prevMessageId, String message, InlineKeyboardMarkup markup) {
-        DeleteMessage deleteMessage = new DeleteMessage(String.valueOf(chatId), prevMessageId);
-        SendMessage sendMessage = new SendMessage(String.valueOf(chatId), message);
-        sendMessage.setReplyMarkup(markup);
-        return List.of(deleteMessage, sendMessage);
-    }
-
-    private List<BotApiMethod<? extends Serializable>> sendMessage(long chatId, String message, InlineKeyboardMarkup markup) {
-        SendMessage sendMessage = new SendMessage(String.valueOf(chatId), message);
-        sendMessage.setReplyMarkup(markup);
-        return List.of(sendMessage);
+        return botApiMethodService.sendMessage(chatId, prevMessageId, messageText, markup);
     }
 
     private List<GuideDto> searchGuides(String language, String region, String startDate, String endDate) {
