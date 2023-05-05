@@ -4,6 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.timur.findguide.constant.Command;
 import me.timur.findguide.dto.RequestDto;
+import me.timur.findguide.dto.UserDto;
+import me.timur.findguide.requester.RequesterService;
+import me.timur.findguide.service.BotApiMethodService;
 import me.timur.findguide.service.UpdateHandlerService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -20,10 +23,15 @@ import java.util.List;
 @Service
 public class UserService implements UpdateHandlerService {
 
+    private final RequesterService requesterService;
+    private final BotApiMethodService botApiMethodService;
+
+
     @Override
     public List<BotApiMethod<? extends Serializable>> handle(RequestDto requestDto) {
         if (requestDto.getData().equals("/start")) {
-            return null;
+            final UserDto save = requesterService.save(requestDto);
+            return botApiMethodService.sendMessage(requestDto.getChatId(), "Welcome to FindGuide! Your id is " + save.getId());
         }
         return null;
     }

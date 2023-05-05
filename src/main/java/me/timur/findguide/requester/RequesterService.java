@@ -1,13 +1,17 @@
 package me.timur.findguide.requester;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+import me.timur.findguide.dto.RequestDto;
+import me.timur.findguide.dto.UserDto;
+
 /**
  * Created by Temurbek Ismoilov on 04/05/23.
  */
 
 public interface RequesterService {
-    void save(Object request);
+    UserDto save(RequestDto request);
 
-    void getById(Object request);
+    UserDto getById(RequestDto request);
 
-    void getByTelegramId(Object request);
+    UserDto getByTelegramId(RequestDto request);
 }

@@ -13,9 +13,10 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 
 @Getter
 public class RequestDto {
-    private long chatId;
+    private Long chatId;
+    private String username;
     private String data;
-    private int prevMessageId;
+    private Integer prevMessageId;
     private String phone;
 
     public RequestDto(@NonNull CallbackQuery query) {
@@ -23,6 +24,7 @@ public class RequestDto {
             throw new FindGuideBotException("CallbackQuery cannot be null");
         }
         this.chatId = query.getMessage().getChatId();
+        this.username = query.getFrom().getUserName();
         this.data = UpdateUtil.getData(query.getData());
         this.prevMessageId = query.getMessage().getMessageId();
         this.phone = query.getMessage().getContact().getPhoneNumber();
@@ -33,8 +35,12 @@ public class RequestDto {
             throw new FindGuideBotException("Message cannot be null");
         }
         this.chatId = message.getChatId();
+        this.username = message.getFrom().getUserName();
         this.data = message.getText();
         this.prevMessageId = message.getMessageId();
-        this.phone = message.getContact().getPhoneNumber();
+        if (message.getContact() != null) {
+            this.phone = message.getContact().getPhoneNumber();
+
+        }
     }
 }

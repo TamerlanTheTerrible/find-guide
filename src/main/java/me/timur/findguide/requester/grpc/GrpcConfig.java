@@ -13,12 +13,15 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class GrpcConfig {
 
+    @Value("${grpc.server.url}")
+    private String url;
+
     @Value("${grpc.server.port}")
-    private String address;
+    private Integer port;
 
     @Bean
     public ProtoClientServiceGrpc.ProtoClientServiceBlockingStub grpcBlockingStub() {
-        ManagedChannel channel = ManagedChannelBuilder.forTarget(address)
+        ManagedChannel channel = ManagedChannelBuilder.forAddress(url, port)
                 .usePlaintext()
                 .build();
 
