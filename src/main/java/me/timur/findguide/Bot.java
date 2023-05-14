@@ -54,17 +54,20 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private void handleIncomingMessage(Message message) {
-        log.info("BOT Message: {}", message.toString());
+        var request = new RequestDto(message);
+        log.info("BOT Message : {}", request);
+
         var callbackHandler = callbackHandlerFactory.get(message.getText());
-        var methods = callbackHandler.handle(new RequestDto(message));
+        var methods = callbackHandler.handle(request);
         execute(methods);
     }
 
     private void handleCallbackQuery(CallbackQuery query) {
-        log.info("BOT CallbackQuery: {}", query.toString());
-        var prefix = UpdateUtil.getPrefix(query.getData());
-        var callbackHandler = callbackHandlerFactory.get(Command.get(prefix));
-        var methods = callbackHandler.handle(new RequestDto(query));
+        var request = new RequestDto(query);
+        log.info("BOT CallbackQuery : {}",request);
+
+        var callbackHandler = callbackHandlerFactory.get(Command.get(UpdateUtil.getPrefix(query.getData())));
+        var methods = callbackHandler.handle(request);
         execute(methods);
     }
 

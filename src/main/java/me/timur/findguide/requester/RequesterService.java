@@ -1,6 +1,5 @@
 package me.timur.findguide.requester;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import me.timur.findguide.dto.RequestDto;
 import me.timur.findguide.dto.UserDto;
 
@@ -9,7 +8,7 @@ import me.timur.findguide.dto.UserDto;
  */
 
 public interface RequesterService {
-    UserDto save(RequestDto request);
+    UserDto getOrSaveUser(RequestDto request);
 
     UserDto getById(RequestDto request);
 

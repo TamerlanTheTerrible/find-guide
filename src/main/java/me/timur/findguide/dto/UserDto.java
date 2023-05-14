@@ -55,5 +55,22 @@ public class UserDto implements Serializable {
         this.isActive = protoUserDto.getIsActive();
         this.isBlocked = protoUserDto.getIsBlocked();
         this.telegramUsername = protoUserDto.getTelegramUsername();
+        this.firstName = protoUserDto.getFirstName();
+        this.lastName = protoUserDto.getLastName();
+    }
+
+    public boolean hasNameOrUsername() {
+        return (firstName != null && !firstName.isBlank())
+                || (lastName != null && !lastName.isBlank())
+                || telegramUsername != null && !telegramUsername.isBlank();
+
+    }
+
+    public String getFullNameOrUsername() {
+        if (hasNameOrUsername()) {
+            return (firstName != null && !firstName.isBlank() ? firstName : "") + " " + (lastName != null && !lastName.isBlank() ? lastName : "");
+        } else {
+            return telegramUsername;
+        }
     }
 }

@@ -43,7 +43,7 @@ message ProtoUserDto {
   bool is_blocked = 11;
 }
 service ProtoClientService {
-  rpc save(ProtoUserCreateDto) returns (ProtoBaseResponse) {};
+  rpc getOrSave(ProtoUserCreateDto) returns (ProtoBaseResponse) {};
   rpc getById(ProtoGetUserByIdRequest) returns (ProtoBaseResponse) {};
   rpc getByTelegramId(ProtoGetUserByTelegramIdRequest) returns (ProtoBaseResponse) {};
 }

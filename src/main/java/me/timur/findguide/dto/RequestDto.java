@@ -18,6 +18,8 @@ public class RequestDto {
     private String data;
     private Integer prevMessageId;
     private String phone;
+    private String firstName;
+    private String lastName;
 
     public RequestDto(@NonNull CallbackQuery query) {
         if (query == null) {
@@ -27,7 +29,11 @@ public class RequestDto {
         this.username = query.getFrom().getUserName();
         this.data = UpdateUtil.getData(query.getData());
         this.prevMessageId = query.getMessage().getMessageId();
-        this.phone = query.getMessage().getContact().getPhoneNumber();
+        if (query.getMessage().getContact() != null) {
+            this.phone = query.getMessage().getContact().getPhoneNumber();
+        }
+        this.firstName = query.getFrom().getFirstName();
+        this.lastName = query.getFrom().getLastName();
     }
 
     public RequestDto(@NonNull Message message) {
@@ -42,5 +48,20 @@ public class RequestDto {
             this.phone = message.getContact().getPhoneNumber();
 
         }
+        this.firstName = message.getFrom().getFirstName();
+        this.lastName = message.getFrom().getLastName();
+    }
+
+    @Override
+    public String toString() {
+        return "RequestDto{" +
+                "chatId=" + chatId +
+                ", username='" + username +
+                ", data='" + data +
+                ", prevMessageId=" + prevMessageId +
+                ", phone='" + phone  +
+                ", firstname='" + firstName  +
+                ", lastname='" + lastName  +
+                '}';
     }
 }

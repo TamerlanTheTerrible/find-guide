@@ -22,20 +22,23 @@ import org.springframework.stereotype.Component;
 public class ProtoClient implements RequesterService{
     private final ProtoClientServiceGrpc.ProtoClientServiceBlockingStub grpcBlockingStub;
 
-    public UserDto save(RequestDto request) {
-        ProtoUserCreateDto protoRequest = ProtoUserCreateDto.newBuilder()
+    public UserDto getOrSaveUser(RequestDto request) {
+        log.info("User get or save attempt: {}", request);
+        var protoRequest = ProtoUserCreateDto.newBuilder()
                 .setTelegramId(request.getChatId())
                 .setTelegramUsername(request.getUsername() != null ? request.getUsername() : "")
                 .setPhoneNumbers(request.getPhone() != null ? request.getPhone() : "")
+                .setFirstName(request.getFirstName() != null ? request.getFirstName() : "")
+                .setLastName(request.getLastName() != null ? request.getLastName() : "")
                 .build();
 
         try {
-            ProtoBaseResponse protoResponse = grpcBlockingStub.save(protoRequest);
+            ProtoBaseResponse protoResponse = grpcBlockingStub.getOrSave(protoRequest);
             var protoUserDto = protoResponse.getPayload().unpack(ProtoUserDto.class);
             return new UserDto(protoUserDto);
         } catch (RuntimeException | InvalidProtocolBufferException e) {
-            log.error("GRPC error while saving user: {}", e.getMessage());
-            throw new FindGuideBotException("GRPC error while saving user: " + e.getMessage());
+            log.error("GRPC error while saving user: {}, error: {}", request.getChatId(), e.getMessage());
+            throw new FindGuideBotException("GRPC error while saving user: {}, error: {}", request.getChatId(), e.getMessage());
         }
     }
 

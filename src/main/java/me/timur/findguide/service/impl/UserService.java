@@ -30,8 +30,11 @@ public class UserService implements UpdateHandlerService {
     @Override
     public List<BotApiMethod<? extends Serializable>> handle(RequestDto requestDto) {
         if (requestDto.getData().equals("/start")) {
-            final UserDto save = requesterService.save(requestDto);
-            return botApiMethodService.sendMessage(requestDto.getChatId(), "Welcome to FindGuide! Your id is " + save.getId());
+            var user = requesterService.getOrSaveUser(requestDto);
+            return botApiMethodService.sendMessage(
+                    requestDto.getChatId(),
+                    "Добро пожаловать" + (user.hasNameOrUsername() ? ", " + user.getFullNameOrUsername() : "")
+            );
         }
         return null;
     }
