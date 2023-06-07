@@ -3,8 +3,7 @@ package com.proto;
 option java_package = "com.proto";
 option java_multiple_files = true;
 
-import "google/protobuf/any.proto";
-//import "google/protobuf/timestamp.proto";
+import "mutual_messages.proto";
 
 message ProtoUserCreateDto {
   string first_name = 1;
@@ -15,33 +14,14 @@ message ProtoUserCreateDto {
   string phone_numbers = 6;
 }
 
-message ProtoBaseResponse {
-    google.protobuf.Any payload = 1;
-    int32 code = 2;
-    string message = 3;
-}
-
 message ProtoGetUserByIdRequest {
   int64 id = 1;
 }
 
 message ProtoGetUserByTelegramIdRequest {
-    int64 telegram_id = 1;
+  int64 telegram_id = 1;
 }
 
-message ProtoUserDto {
-  int64 id = 1;
-  string date_created = 2;
-  string date_updated = 3;
-  string first_name = 4;
-  string last_name = 5;
-  string birth_date = 6;
-  int64 telegram_id = 7;
-  string telegram_username = 8;
-  string phone_numbers = 9;
-  bool is_active = 10;
-  bool is_blocked = 11;
-}
 service ProtoClientService {
   rpc getOrSave(ProtoUserCreateDto) returns (ProtoBaseResponse) {};
   rpc getById(ProtoGetUserByIdRequest) returns (ProtoBaseResponse) {};

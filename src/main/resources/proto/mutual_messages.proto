@@ -1,0 +1,43 @@
+syntax = "proto3";
+package com.proto;
+option java_package = "com.proto";
+option java_multiple_files = true;
+
+import "google/protobuf/any.proto";
+
+message ProtoBaseResponse {
+  google.protobuf.Any payload = 1;
+  int32 code = 2;
+  string message = 3;
+}
+
+message ProtoGuideDto {
+  int64 id = 1;
+  string date_created = 2;
+  string date_updated = 3;
+  repeated string language_names = 4;
+  repeated string region_names = 5;
+  string files = 6;
+  string description = 7;
+  bool is_verified = 8;
+  bool has_car = 9;
+  string transport = 10;
+  bool is_active = 11;
+  bool is_blocked = 12;
+  ProtoUserDto user = 13;
+}
+
+message ProtoUserDto {
+  int64 id = 1;
+  string date_created = 2;
+  string date_updated = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string birth_date = 6;
+  int64 telegram_id = 7;
+  string telegram_username = 8;
+  string phone_numbers = 9;
+  bool is_active = 10;
+  bool is_blocked = 11;
+}
+

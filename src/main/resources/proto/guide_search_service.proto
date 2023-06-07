@@ -1,0 +1,61 @@
+syntax = "proto3";
+package com.proto;
+option java_package = "com.proto";
+option java_multiple_files = true;
+
+import "mutual_messages.proto";
+
+message ProtoGuideDtoList {
+  int64 search_id = 1;
+  repeated ProtoGuideDto items = 2;
+  int64 total_count = 3;
+}
+
+message ProtoGuideFilterDto {
+  int64 user_id = 1;
+  int64 user_telegram_id = 2;
+  string from_date = 3;
+  string to_date = 4;
+  string language_name = 5;
+  string region_name = 6;
+  string comment = 7;
+  bool has_car = 8;
+  int32 page = 9;
+  int32 page_size = 10;
+}
+
+message ProtoGuideSearchIdentificationDto {
+  int64 search_id = 1;
+}
+
+message ProtoGetGuideSearchesRequest {
+  int64 user_id = 1;
+  int64 user_telegram_id = 2;
+  repeated string statuses = 3;
+}
+
+message ProtoGetGuideSearchesResponse {
+  repeated ProtoGuideSearchDto items = 1;
+}
+
+message ProtoGuideSearchDto {
+  int64 search_id = 1;
+  int64 client_id = 2;
+  int64 client_telegram_id = 3;
+  string from_date = 4;
+  string to_date = 5;
+  string language = 6;
+  string region = 7;
+  string comment = 8;
+  bool has_car = 9;
+  string status = 10;
+  repeated int64 guide_ids = 11;
+  int64 search_count = 12;
+}
+
+service ProtoGuideSearchService{
+  rpc search(ProtoGuideFilterDto) returns (ProtoBaseResponse) {};
+  rpc notifyGuides(ProtoGuideSearchIdentificationDto) returns (ProtoBaseResponse) {};
+  rpc close(ProtoGuideSearchIdentificationDto) returns (ProtoBaseResponse) {};
+  rpc get(ProtoGetGuideSearchesRequest) returns (ProtoBaseResponse) {};
+}

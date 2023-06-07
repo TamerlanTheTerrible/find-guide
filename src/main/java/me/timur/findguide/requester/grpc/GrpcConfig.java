@@ -2,6 +2,8 @@ package me.timur.findguide.requester.grpc;
 
 import com.proto.ProtoClientServiceGrpc;
 import io.grpc.*;
+import lombok.extern.slf4j.Slf4j;
+import me.timur.findguide.requester.grpc.interceptor.TracingClientInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
  * Created by Temurbek Ismoilov on 04/05/23.
  */
 
+@Slf4j
 @Configuration
 public class GrpcConfig {
 
@@ -20,20 +23,14 @@ public class GrpcConfig {
     private Integer port;
 
     @Bean
-    public ProtoClientServiceGrpc.ProtoClientServiceBlockingStub grpcBlockingStub() {
+    public ProtoClientServiceGrpc.ProtoClientServiceBlockingStub protoClientServiceBlockingStub() {
         ManagedChannel channel = ManagedChannelBuilder.forAddress(url, port)
                 .usePlaintext()
                 .build();
 
         // Create a blocking stub using the channel
-        return ProtoClientServiceGrpc.newBlockingStub(channel);
-//                .withInterceptors(new ClientInterceptor() {
-//                    @Override
-//                    public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> methodDescriptor, CallOptions callOptions, Channel channel) {
-//                        return null;
-//                    }
-//                }); // add any interceptors needed
+        return ProtoClientServiceGrpc
+                .newBlockingStub(channel)
+                .withInterceptors(new TracingClientInterceptor()); // add any interceptors needed
     }
-
-
 }
